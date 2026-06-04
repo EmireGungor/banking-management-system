@@ -5,18 +5,30 @@ public class CheckingAccount extends Account { //inheritance
     private double dailyWithdrawnAmount; // Günlük çekilen toplam
     private LocalDate lastTransactionDate; // Son işlem tarihi
 //Constructor
-    public CheckingAccount(String accountNumber, String customerName, double dailyLimit) {
-        super(accountNumber, customerName, new SmsNotification());
-        this.dailyLimit = dailyLimit;
-        this.dailyWithdrawnAmount = 0.0; //varsayılan
-        this.lastTransactionDate = LocalDate.now(); //ilk tarih bugün
+public CheckingAccount(String accountNumber, String customerName, double dailyLimit, NotificationService notificationService) {
+    super(accountNumber, customerName, notificationService);
+    this.dailyWithdrawnAmount = 0.0;
+    this.lastTransactionDate = LocalDate.now();
+
+    // BACKEND GÜVENLİK DUVARI
+    if (dailyLimit < 0) {
+        this.dailyLimit = 5000; // Negatif sızarsa varsayılan limit
+    } else if (dailyLimit > 20000) {
+        this.dailyLimit = 20000; // Üst sınır aşılırsa maksimum tavan limit
+    } else {
+        this.dailyLimit = dailyLimit; // Normalse kabul et
     }
+}
 
     @Override
-    public void deposit(double amount) {
-        super.deposit(amount);
-        String message = "An amount of " + amount + " TL has been deposited into your account numbered " + getAccountNumber() + ". Current balance: " + getBalance() + " TL";
-        triggerNotification(message);
+    public boolean deposit(double amount) {
+        if (super.deposit(amount)) {
+            String message = "An amount of " + amount + " TL has been deposited into your account numbered " + getAccountNumber() + ". Current balance: " + getBalance() + " TL";
+            triggerNotification(message);
+            return true;
+        } else {
+            return false ;
+        }
     }
 
     @Override
@@ -28,14 +40,15 @@ public class CheckingAccount extends Account { //inheritance
         }
         //Limit ve Bakiye
         //Limit aşımı olduğunda
-        if (amount > dailyLimit || (this.dailyWithdrawnAmount + amount > dailyLimit)) {
+        if (this.dailyWithdrawnAmount + amount > dailyLimit) {
             System.out.println("[ERROR]: Transaction denied. Daily withdrawal limit exceeded.");
             return false;
         }
         //Limit uygun hesapta yeteri kadar para var mı?
         if (super.withdraw(amount)) {
             this.dailyWithdrawnAmount += amount;
-            System.out.println("[SUCCESS]: Transaction completed. Current daily total withdrawal: " + dailyWithdrawnAmount);
+            String message = "[SUCCESS]: Transaction completed. Current daily total withdrawal: " + dailyWithdrawnAmount;
+            triggerNotification(message);
             return true;
         } else {
             return false;

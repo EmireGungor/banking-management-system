@@ -30,11 +30,13 @@ public abstract class Account {
         this.customerName = customerName;
     }
 //Deposit and withdraw methods
-    public void deposit(double amount) {
+    public boolean deposit(double amount) {
         if(amount > 0) {
             this.balance += amount;
+            return true;
         } else {
             System.out.println("[ERROR]: Deposit amount must be greater than zero.");
+            return false;
         }
     }
     public boolean withdraw(double amount) {
@@ -47,11 +49,6 @@ public abstract class Account {
         } else {
             this.balance -= amount;
             return true;
-        }
-    }
-    public void addInterest(double interestAmount){
-        if(interestAmount > 0){
-            this.balance += interestAmount;
         }
     }
 }
