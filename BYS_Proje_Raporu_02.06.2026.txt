@@ -1,0 +1,23 @@
+======================================================================
+BANKACILIK YÖNETİM SİSTEMİ (BYS) - GELİŞTİRME VE ENTEGRASYON RAPORU
+======================================================================
+Proje Adı: Bankacılık Sistemi Çekirdek Mimari Simülasyonu
+Geliştirici: Emire Güngör
+Aşama: 1. Aşama (Kapsülleme) & 2. Aşama (Kalıtım ve Çok Biçimlilik)
+Tarih: 02.06.2026
+
+1. Aşama (Kapsülleme - Encapsulation):
+• Temel 'Account' sınıfını oluşturarak; accountNumber, customerName ve balance gibi kritik verileri uygun veri tiplerinde tanımlayıp 'private' erişim belirleyicisiyle dış müdahalelere kapattım. Verilere güvenli erişimi ise getter metotları ve kapsülleme kuralları üzerinden sağladım.
+• Sınıf içerisine yazdığım kontrol kuralları (Guard Clauses) sayesinde; negatif miktarda para yatırma veya yetersiz bakiye ile para çekme gibi hatalı finansal işlemleri daha sistemin en başında engelledim.
+
+2. Aşama (Kalıtım ve Çok Biçimlilik - Inheritance & Polymorphic Overriding):
+• Kod tekrarının önüne geçmek amacıyla 'CheckingAccount' (Vadesiz) ve 'SavingsAccount' (Vadeli) sınıflarını ana sınıftan miras alarak (extends) ürettim ve 'super' anahtar kelimesiyle alt sınıf bağlantılarını kararlı hale getirdim.
+• Para çekme (withdraw) metodunu her iki hesap türünün kendi iş kurallarına göre özelleştirerek yeniden kurguladım.
+• Vadesiz hesapta günlük limit aşım kontrolü uygularken; vadeli hesapta tamamen yerleşik Java yapılarıyla bir vade takip mekanizması oluşturdum. Bu sayede vadenin dolup dolmadığı denetlenerek, hesaptan yapılan ilk erken çekim işleminde sistemin kurumsal bir İngilizce uyarı logu üretmesini sağladım.
+• Esas para çekme ve bakiye düşme eylemlerini ise 'super.withdraw()' fonksiyonunu çağırarak tek bir güvenli merkezden yönettim.
+
+'Main' sınıfı üzerinden yürüttüğüm senaryolarda, sistemin her iki hesap türü için de tamamen tanımlanan kurallara göre ve hatasız çalıştığını konsol çıktılarında doğruladım.
+
+Metodoloji ve Eğitim Araçları Notu:
+• Kodları local ortamımda hazır hale getirdim. Geliştirme sürecinde Kaan Bey'in önerileri doğrultusunda IntelliJ IDEA'nın yeteneklerinden ve kolaylıklarından da yararlandım.
+• Ayrıca test senaryolarının kurgulanması ve teorik konuların daha açık/anlaşılır hale getirilmesi aşamalarında, temiz kod standartlarına uyum sağlamak adına eğitim amaçlı yapay zeka desteğinden yararlandım.

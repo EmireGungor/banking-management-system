@@ -1,0 +1,77 @@
+ ======================================================================
+BANKACILIK YÖNETİM SİSTEMİ (BYS) - GELİŞTİRME VE ENTEGRASYON RAPORU
+
+Hazırlayan: Emire Güngör
+Konu: Aşama 1, 2 ve 3 Çekirdek Mimari Tamamlanma ve Doğrulama
+Rapor Tarih: 03.06.2026
+
+---
+
+1. GİRİŞ VE METODOLOJİ
+
+Bu rapor; Bankacılık Yönetimi Sistemi (BYS) projesinin ilk 3 aşamasının (Kapsülleme, Kalıtım/Çok Biçimlilik ve Soyutlama/Arayüz Entegrasyonu) tamamlanma sürecini, süreç esnasında karşılaşılan mimari zorlukları, yapılan kritik refactor (kod iyileştirme) işlemlerini ve bunların mühendislik gerekçelerini içermektedir. Geliştirme sürecinde temiz kod standartlarına (Clean Code) uyum sağlamak adına IntelliJ IDEA ve eğitim ve rapor oluşturma amaçlı yapay zeka asistanlığından yararlanılmıştır.
+
+---
+
+2. MİMARİ PLANLAMA, TASARIM KARARLARI VE GEREKÇELERİ
+
+A. Hesapları Neden Account (Üst Sınıf) Üzerinden Yürüttüm?
+Tasarım Kararı: Tüm bankacılık işlemlerini, CheckingAccount (Vadesiz) veya SavingsAccount (Vadeli) sınıfları yerine, soyut (abstract) Account sınıfı referansı üzerinden yönettim.
+Gerekçe: Nesne yönelimli programlamanın en güçlü silahı olan Çok Biçimlilik (Polymorphism) ve Gevşek Bağlılık (Loose Coupling) ilkelerini hayata geçirmek. Bu sayede sistem, alt sınıfların iç detaylarını bilmek zorunda kalmaz. Yarın bir gün "Kredi Hesabı" veya "Yatırım Hesabı" eklendiğinde, sistemin para çekme/yatırma gibi çekirdek mekanizmaları hiçbir değişikliğe uğramadan yeni hesap türlerini de otomatik olarak destekleyecektir.
+
+B. balance (Bakiye) Değişkeninin Erişilebilirliği: Neden Protected Değil de Private?
+Tasarım Kararı: Başlangıçta alt sınıfların bakiyeye doğrudan erişebilmesi için balance değişkenini protected yapmayı değerlendirdim. Ancak mimari planlama aşamasında bunun bir güvenlik açığı yaratacağına karar vererek private kalmasını sağladım.
+Gerekçe: Eğer balance değişkenini protected yapsaydım, alt sınıflar kapsülleme kurallarını delerek bakiyeyi doğrudan manipüle edebilir, kontrolsüz şekilde eksiye düşürebilirdi. Veri güvenliği (Data Integrity) açısından bakiyeyi private tutarak , alt sınıfların bile bakiye düşürmek için üst sınıftaki güvenli ve kontrollü super.withdraw() metodunu çağırmasını zorunlu kıldım.
+
+C. withdraw Metodunu Neden boolean Tanımladım?
+Tasarım Kararı: Para çekme (withdraw) metodunu void yapmak yerine geriye boolean (true / false) değer döndürecek şekilde tasarladım.
+Gerekçe: Bankacılık işlemlerinde bir talebin "başlatılması" ile "başarıyla sonuçlanması" farklı durumlardır. Metodun boolean dönmesi sayesinde, işlemin yetersiz bakiye veya limit engelinden dolayı başarısız olup olmadığını üst hiyerarşide yakalayabildim. Bu sayede, "Eğer işlem başarıyla tamamlandıysa bildirim (SMS/E-Posta) tetikle, başarısızsa tetikleme" gibi akış kontrollerini kararlı bir şekilde yönetebildim.
+
+D. addInterest Metodunda Neyi Amaçladım?
+Tasarım Kararı: Ana sınıf içerisine sadece pozitif değerleri kabul eden kontrollü bir addInterest metodu eklendi.
+Gerekçe: Vadeli hesaplarda (SavingsAccount) vade dolduğunda kazanılan faiz getirisinin , standart para yatırma (deposit) kanalından geçmesini engellemek. deposit metodu dışarıdan kullanıcının kendi isteğiyle yaptığı fiziksel para girişlerini temsil ederken; addInterest metodu sistemin kendi içinde hesapladığı kurumsal faiz hakkını hesaba güvenle enjekte etmesini sağlar. Böylece iki farklı finansal hareketin lojistiğini birbirinden ayırmış oldum.
+
+---
+
+3. ZAMAN VE LİMİT YÖNETİMİNDEKİ AR-GE KEŞİFLERİ
+
+A. Gün Değişimi ve LocalDate Keşfi
+Tasarım Kararı: Vadesiz hesapta günlük limitin, gün değiştiğinde otomatik sıfırlanması gerekiyordu. Bu süreçte eski Java Date yapıları yerine modern, thread-safe ve çok daha yetenekli olan java.time.LocalDate yapısını keşfettim ve projeye entegre ettim.
+Gerekçe ve Kıyaslamalar: Eski Date sınıfı saat ve dakika bilgisini de tuttuğu için gün karşılaştırmalarında büyük karmaşalara neden oluyordu. LocalDate ise sadece YIL-AY-GÜN bilgisine odaklandığı için .equals() fonksiyonu ile "Bugün, son işlem yapılan gün ile aynı mı?" kontrolünü pürüzsüz yapmamızı sağladı. Vadeli hesapta ise .isBefore() ve .plusDays() metotlarını keşfederek , karmaşık takvim hesaplamalarına girmeden vadenin dolup dolmadığını tek satırda kıyaslamayı başardım.
+
+B. Günlük Limit Hesabında Matematiksel Kümülatif Toplam Hassasiyeti
+Tasarım Kararı: Günlük limit aşımını kontrol ederken sadece o an çekilmek istenen miktara bakmadım; gün içinde çekilmiş olan kümülatif toplamı da hesaba kattım.
+Gerekçe: Kullanıcının günlük limiti 5000 TL iken, arka arkaya 3000 TL ve 3000 TL çekerek limiti delmesini engellemek. dailyWithdrawnAmount + amount > dailyLimit algoritması sayesinde, her başarılı işlemde gün içindeki toplam çekimi biriktirerek kümülatif limit güvenliğini tam olarak sağladım.
+
+---
+
+4. KRİTİK FARKINDALIKLAR VE ÇÖZÜLEN "BUG"LAR (STAJ SÜRECİ KAZANIMLARI)
+
+A. İşlem Öncelik Sıralaması ve Bilgi Güvenliği Açığı (Kritik Refactor)
+Sorun: Vadesiz hesapta para çekerken, limit kontrolü ile bakiye kontrolünün sırası başlangıçta matematiksel bir çakışmaya neden oluyordu.
+Uygulanan Yaklaşım (Önce Limit, Sonra Bakiye Kontrolü): Kod, limit aşımını bakiye sorgusundan önce yapacak şekilde yapılandırıldı.
+Gerekçe:
+
+1. Performans: Limit kontrolü nesne içi basit bir karşılaştırmadır. Limit zaten aşılmışsa, maliyetli olan bakiye sorgulama adımına hiç geçilmeden işlem en başta reddedilir.
+2. Bilgi Güvenliği (Information Disclosure): Kötü niyetli kişilerin, günlük limitin üzerinde çok yüksek tutarlar deneyerek hesapta ne kadar bakiye olduğunu hata mesajlarının türünden (Yetersiz Bakiye mi yoksa Limit Aşımı mı olduğundan) analiz etmesi engellenmiştir. Sistem direkt "Limit Aşıldı" diyerek içerideki bakiye bilgisini dışarıya maskeler.
+
+
+
+B. Çift Log Üretme Hatası (Metot Çağırım Optimizasyonu)
+Sorun: Alt sınıfta if (super.withdraw(amount)) kontrolü yapılırken , üst sınıf bakiye yetersizse zaten ekrana hata basıyordu. Alt sınıftaki else bloğunda da aynı mesaj tekrar yazıldığı için konsolda çift log oluşuyordu.
+Çözüm: Alt sınıftaki mükerrer ifade kaldırılarak temiz kod standartları sağlandı.
+
+---
+
+5. NERELERDE ZORLANDIM? (GERİ BİLDİRİM / FEEDBACK)
+
+* İş Kuralları Önceliklendirmesi: Yazılım dilinin kuralları (Syntax) ile finansal iş kurallarının (Business Logic) her zaman doğrusal çakışmadığını gördüm. Limit kontrolünün bakiye kontrolünden önce gelmesi gerektiği gibi mimari öncelikleri kurgularken başlangıçta algoritma sırasını oturtmakta zorlandım.
+* Metot Ezme (Overriding) ve Süreç Takibi: super.withdraw() metodunu çağırırken , hem üst sınıfın işlevini koruyup hem de alt sınıfa özgü durumları (günlük limit biriktirme, bildirim tetikleme) senkronize etmek , parantezlerin ve return ifadelerinin takibini yaparken adaptasyon süreci gerektirdi. Aynı zamanda algoritma taslakları kurulurken gerçek hayat simülasyonu yapmada proje bazlı eksiklerim olduğunu fark ettim.
+* Derleme: Main üzerinden testlerimi yaparken Scanner sınıfı ile derleme denedim. İstenildiği üzere kullanıcıdan veri alarak hardcoded girişin önüne geçmeyi amaçladım. Başarı ile çalıştırdım ama var olan tüm kodu kontrol edebilecek yapıya getiremedim. Dolayısı ile şu aşamada gelişim sağlayamayarak yapay zeka yardımı ile olası sonuçların kontrolünü yaptım.
+
+---
+
+Yapılacak Aşamalar (Sıradaki Adım):
+
+* Aşama 4 Bank (Banka) sınıfı inşa edilecek ve konsol menüsü arayüzü kurgulanacak gibi görevleri tamamlayacağım.
+
