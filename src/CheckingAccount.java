@@ -23,8 +23,10 @@ public CheckingAccount(String accountNumber, String customerName, double dailyLi
     @Override
     public boolean deposit(double amount) {
         if (super.deposit(amount)) {
-            String message = "An amount of " + amount + " TL has been deposited into your account numbered " + getAccountNumber() + ". Current balance: " + getBalance() + " TL";
-            triggerNotification(message);
+            System.out.println("[SYSTEM LOG] Deposit successful. Account: " + this.getAccountNumber() + " | Amount: " + amount + " | New Balance: " + this.getBalance());
+
+            String customerMessage = "Dear customer, an amount of " + amount + " has been successfully deposited into your account.";
+            triggerNotification(customerMessage);
             return true;
         } else {
             return false ;
@@ -47,8 +49,10 @@ public CheckingAccount(String accountNumber, String customerName, double dailyLi
         //Limit uygun hesapta yeteri kadar para var mı?
         if (super.withdraw(amount)) {
             this.dailyWithdrawnAmount += amount;
-            String message = "[SUCCESS]: Transaction completed. Current daily total withdrawal: " + dailyWithdrawnAmount;
-            triggerNotification(message);
+            System.out.println("[SYSTEM LOG] Withdraw successful. Amount: " + amount + " | Current Daily Total: " + dailyWithdrawnAmount);
+
+            String customerMessage = "Dear customer, a withdrawal of " + amount + " USD/TL has been successfully made from your account.";
+            triggerNotification(customerMessage);
             return true;
         } else {
             return false;

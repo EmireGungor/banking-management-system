@@ -1,6 +1,4 @@
 public class EmailNotification implements NotificationService{
     @Override
-    public void sendNotification(String message) {
-        System.out.println("[EMAIL NOTIFICATION]: " + message);
-    }
+    public void sendNotification(String message) { System.out.println("[EMAIL NOTIFICATION]: " + message); }
 }

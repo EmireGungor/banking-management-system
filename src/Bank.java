@@ -1,6 +1,41 @@
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Bank {
-    //todo 4.aşamayı tamamla!
+
+    private Map<String, Account> accounts = new HashMap<>();
+
+    public void addAccount(Account account) {
+        accounts.put(account.getAccountNumber(), account);
+    }
+
+    public Account findAccount(String accountNo) {
+        return accounts.get(accountNo);
+    }
+
+    public double getTotalBankBalance() {
+        double total = 0.0;
+        for (Account account : accounts.values()) { //for-each
+            total += account.getBalance();
+        }
+        return total;
+    }
+
+    public void displayAllAccounts() {
+        // Kayıtlı hesap yoksa çalıştırma!
+        if (accounts.isEmpty()) {
+            System.out.println("[SYSTEM LOG]: No accounts registered in the system yet.");
+            return;
+        }
+
+        System.out.println("--- ALL REGISTERED ACCOUNTS ---");
+
+        for (Account account : accounts.values()) {
+            System.out.println("Account No: " + account.getAccountNumber() +
+                    " | Owner: " + account.getCustomerName() +
+                    " | Balance: " + account.getBalance());
+        }
+
+        System.out.println("----------------------------------------");
+    }
 }

@@ -1,31 +1,39 @@
 import java.time.LocalDate;
 
 public class SavingsAccount extends Account { //inheritance
-    private double interestRate;
     private LocalDate creationDate; //Vadeli hesap açılış tarihi
+    private double interestRate;
     private int maturityDuration; //Vade süresi
-    private boolean isInterestLost; //Vade hakkı kayboldu mu?
+    private boolean isInterestLost;//Vade hakkı kayboldu mu?
 
-    public SavingsAccount(String accountNumber, String customerName, double interestRate, int maturityDuration, NotificationService notificationService) {
+    public SavingsAccount(String accountNumber, String customerName, int maturityDuration, NotificationService notificationService) {
         super(accountNumber, customerName, notificationService); //makes connection with Account
         if (maturityDuration < 0) {
             throw new IllegalArgumentException("Maturity duration cannot be negative.");
         }
-        this.interestRate = interestRate;
         this.maturityDuration = maturityDuration;
+        if (this.maturityDuration <= 32) {
+            this.interestRate = 0.40; // %40 faiz
+        } else if (this.maturityDuration <= 92) {
+            this.interestRate = 0.45; // %45 faiz
+        } else {
+            this.interestRate = 0.48; // %48 faiz
+        }
         this.isInterestLost = false;
         this.creationDate = LocalDate.now();
     }
 
     @Override
     public boolean deposit(double amount) {
-       if (super.deposit(amount)) {
-           String message = "An amount of " + amount + " TL has been deposited into your account numbered " + getAccountNumber() + ". Current balance: " + getBalance() + " TL";
-           triggerNotification(message);
-           return true;
-       } else {
-           return false ;
-       }
+        if (super.deposit(amount)) {
+            System.out.println("[SYSTEM LOG] Deposit successful. Account: " + this.getAccountNumber() + " | Amount: " + amount + " | New Balance: " + this.getBalance());
+
+            String customerMessage = "Dear customer, an amount of " + amount + " has been successfully deposited into your account.";
+            triggerNotification(customerMessage);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -43,11 +51,7 @@ public class SavingsAccount extends Account { //inheritance
         } else {
             //vade dolduğunda
             if (!isInterestLost) {
-                // Faiz hesaplaması
-                double interestAmount = getBalance() * interestRate;
-                // Hesaplanan faiz Account sınıfındaki metoda gider
-                this.isInterestLost = true; //faiz getirisi bir kere eklendi!
-                System.out.println("[SUCCESS]: Maturity period expired. Accrued interest has been added.");
+                applyMaturityInterest();
             }
         }
 
@@ -58,5 +62,15 @@ public class SavingsAccount extends Account { //inheritance
             triggerNotification(emailMessage);
         }
         return isSuccess;
+    }
+
+    public void applyMaturityInterest() {
+        double currentBalance = getBalance();
+        double interestAmount = currentBalance * this.interestRate;
+
+        super.deposit(interestAmount);
+        this.isInterestLost = true;
+
+        System.out.println("[SUCCESS]: Maturity period expired. Accrued interest has been successfully added. Amount: " + interestAmount);
     }
 }
