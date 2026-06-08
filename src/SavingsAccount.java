@@ -8,8 +8,8 @@ public class SavingsAccount extends Account { //inheritance
 
     public SavingsAccount(String accountNumber, String customerName, int maturityDuration, NotificationService notificationService) {
         super(accountNumber, customerName, notificationService); //makes connection with Account
-        if (maturityDuration < 0) {
-            throw new IllegalArgumentException("Maturity duration cannot be negative.");
+        if (maturityDuration <= 0) {
+            throw new IllegalArgumentException("Maturity duration must be greater than 0.");
         }
         this.maturityDuration = maturityDuration;
         if (this.maturityDuration <= 32) {

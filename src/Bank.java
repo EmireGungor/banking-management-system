@@ -5,8 +5,17 @@ public class Bank {
 
     private Map<String, Account> accounts = new HashMap<>();
 
-    public void addAccount(Account account) {
-        accounts.put(account.getAccountNumber(), account);
+    public boolean addAccount(Account account) {
+        String accountNumber = account.getAccountNumber();
+        if (accounts.containsKey(accountNumber)) {
+            return false;
+        }
+        accounts.put(accountNumber, account);
+        return true;
+    }
+
+    public boolean isAccountExists(String accountNumber) {
+        return accounts.containsKey(accountNumber);
     }
 
     public Account findAccount(String accountNo) {

@@ -24,25 +24,51 @@ public class Main {
             switch (choice) {
                 case 1: // Define Checking Account
                     String checkingName = getValidName(scanner);
-                    String checkingNo = getValidAccountNo(scanner);
+
+                    //FAIL-FAST ACCOUNT NUMBER VALIDATION LOOP
+                    String checkingNo;
+                    while (true) {
+                        checkingNo = getValidAccountNo(scanner); // Format check
+
+                        if (bank.isAccountExists(checkingNo)) {
+                            System.out.println("\n[ERROR]: Account creation failed! Account number " + checkingNo + " already exists in the system.");
+                        } else {
+                            break;
+                        }
+                    }
+
                     NotificationService checkingNotification = getNotificationChoice(scanner);
 
-                    // Creating checking account with 0.0 initial balance and 5000.0 daily limit
                     CheckingAccount checkingAccount = new CheckingAccount(checkingNo, checkingName, 5000.0, checkingNotification);
                     bank.addAccount(checkingAccount);
-                    System.out.println("/n [SUCCESS]: Account successfully created for " + checkingAccount.getCustomerName() + ".");
 
+                    System.out.println("\n[SUCCESS]: Account successfully created for " + checkingAccount.getCustomerName() + ".");
                     checkingAccount.triggerNotification("Welcome to our bank! Your checking account " + checkingAccount.getAccountNumber() + " has been successfully activated.");
                     break;
 
                 case 2: // Define Savings Account
                     String savingsName = getValidName(scanner);
-                    String savingsNo = getValidAccountNo(scanner);
 
+                    //FAIL-FAST ACCOUNT NUMBER VALIDATION LOOP
+                    String savingsNo;
+                    while (true) {
+                        savingsNo = getValidAccountNo(scanner); // Format check
+
+                        // Quietly checking with the bank layer
+                        if (bank.isAccountExists(savingsNo)) {
+                            System.out.println("\n[ERROR]: Account creation failed! Account number " + savingsNo + " already exists in the system.");
+                        } else {
+                            break;
+                        }
+                    }
+
+
+                    //MATURITY DURATION VALIDATION LOOP
                     System.out.print("Enter Maturity Duration (in days): ");
                     int duration = getIntInput(scanner);
                     while (duration <= 0) {
-                        System.out.print("[ERROR]: Duration must be greater than 0. Re-enter: ");
+                        System.out.println("\n[ERROR]: Maturity duration must be greater than 0 days. Try again.");
+                        System.out.print("Enter Maturity Duration (in days): ");
                         duration = getIntInput(scanner);
                     }
 
@@ -50,8 +76,8 @@ public class Main {
 
                     SavingsAccount savingsAccount = new SavingsAccount(savingsNo, savingsName, duration, savingsNotification);
                     bank.addAccount(savingsAccount);
-                    System.out.println("/n [SUCCESS]: Account successfully created for " + savingsAccount.getCustomerName() + ".");
 
+                    System.out.println("\n[SUCCESS]: Account successfully created for " + savingsAccount.getCustomerName() + ".");
                     savingsAccount.triggerNotification("Welcome to our bank! Your savings account " + savingsAccount.getAccountNumber() + " has been successfully activated.");
                     break;
 
