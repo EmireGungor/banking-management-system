@@ -4,6 +4,8 @@ public class CheckingAccount extends Account { //inheritance
     private final double dailyLimit; // Günlük limit
     private double dailyWithdrawnAmount; // Günlük çekilen toplam
     private LocalDate lastTransactionDate; // Son işlem tarihi
+    private boolean limitAdjusted = false;
+    private String adjustmentMessage = "";
 //Constructor
 public CheckingAccount(String accountNumber, String customerName, double dailyLimit, NotificationService notificationService) {
     super(accountNumber, customerName, notificationService);
@@ -12,13 +14,24 @@ public CheckingAccount(String accountNumber, String customerName, double dailyLi
 
     // BACKEND GÜVENLİK DUVARI
     if (dailyLimit < 0) {
-        this.dailyLimit = 5000; // Negatif sızarsa varsayılan limit
+        this.dailyLimit = 5000;
+        this.limitAdjusted = true;
+        this.adjustmentMessage = "Negative limit (" + dailyLimit + ") rejected. Defaulting to 5000.";
     } else if (dailyLimit > 20000) {
-        this.dailyLimit = 20000; // Üst sınır aşılırsa maksimum tavan limit
+        this.dailyLimit = 20000;
+        this.limitAdjusted = true;
+        this.adjustmentMessage = "Limit " + dailyLimit + " exceeds max. Capping to 20000.";
     } else {
-        this.dailyLimit = dailyLimit; // Normalse kabul et
+        this.dailyLimit = dailyLimit;
     }
 }
+    public boolean isLimitAdjusted() {
+        return this.limitAdjusted;
+    }
+
+    public String getAdjustmentMessage() { // Bu zaten String, doğru
+        return this.adjustmentMessage;
+    }
 
     @Override
     public boolean deposit(double amount) {

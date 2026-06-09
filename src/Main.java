@@ -25,27 +25,41 @@ public class Main {
                 case 1: // Define Checking Account
                     String checkingName = getValidName(scanner);
 
-                    //FAIL-FAST ACCOUNT NUMBER VALIDATION LOOP
                     String checkingNo;
                     while (true) {
-                        checkingNo = getValidAccountNo(scanner); // Format check
-
+                        checkingNo = getValidAccountNo(scanner);
                         if (bank.isAccountExists(checkingNo)) {
-                            System.out.println("\n[ERROR]: Account creation failed! Account number " + checkingNo + " already exists in the system.");
+                            System.out.println("\n[ERROR]: Account number " + checkingNo + " already exists.");
                         } else {
                             break;
                         }
                     }
 
+                    double inputLimit = getDailyLimitInput(scanner);
+                    scanner.nextLine();
+
                     NotificationService checkingNotification = getNotificationChoice(scanner);
+                    CheckingAccount checkingAccount = new CheckingAccount(checkingNo, checkingName, inputLimit, checkingNotification);
 
-                    CheckingAccount checkingAccount = new CheckingAccount(checkingNo, checkingName, 5000.0, checkingNotification);
-                    bank.addAccount(checkingAccount);
+                    if (checkingAccount.isLimitAdjusted()) {
+                        System.out.println("\n[NOTICE]: " + checkingAccount.getAdjustmentMessage());
+                        System.out.print("Do you accept this adjusted limit? (y/n): ");
+                        String confirm = scanner.nextLine().trim();
 
-                    System.out.println("\n[SUCCESS]: Account successfully created for " + checkingAccount.getCustomerName() + ".");
-                    checkingAccount.triggerNotification("Welcome to our bank! Your checking account " + checkingAccount.getAccountNumber() + " has been successfully activated.");
+                        if (!confirm.equalsIgnoreCase("y")) {
+                            System.out.println("[INFO]: Account creation cancelled by user.");
+                            break; // İşlemi tamamen iptal et, menüye dön
+                        }
+                    }
+
+                    // "Son Kale" Bank kontrolü
+                    if (bank.addAccount(checkingAccount)) {
+                        System.out.println("\n[SUCCESS]: Account successfully created.");
+                        checkingAccount.triggerNotification("Welcome! Your checking account is active.");
+                    } else {
+                        System.out.println("\n[ERROR]: System failed to add account.");
+                    }
                     break;
-
                 case 2: // Define Savings Account
                     String savingsName = getValidName(scanner);
 
@@ -75,10 +89,12 @@ public class Main {
                     NotificationService savingsNotification = getNotificationChoice(scanner);
 
                     SavingsAccount savingsAccount = new SavingsAccount(savingsNo, savingsName, duration, savingsNotification);
-                    bank.addAccount(savingsAccount);
-
-                    System.out.println("\n[SUCCESS]: Account successfully created for " + savingsAccount.getCustomerName() + ".");
-                    savingsAccount.triggerNotification("Welcome to our bank! Your savings account " + savingsAccount.getAccountNumber() + " has been successfully activated.");
+                    if (bank.addAccount(savingsAccount)) {
+                        System.out.println("\n[SUCCESS]: Account successfully created.");
+                        savingsAccount.triggerNotification("Welcome! Your saving account is active.");
+                    } else {
+                        System.out.println("\n[ERROR]: System failed to add account.");
+                    }
                     break;
 
                 case 3: // Deposit Money
@@ -198,5 +214,16 @@ public class Main {
         System.out.println("[ERROR]: Invalid input! Please enter a valid number.");
         scanner.nextLine(); // Clear faulty token
         return -1.0;
+    }
+
+    private static double getDailyLimitInput(Scanner scanner) {
+        while (true) {
+            System.out.print("Enter daily withdrawal limit: ");
+            if (scanner.hasNextDouble()) {
+                return scanner.nextDouble(); // Sadece double mı diye bakar, aralık checkingaccount tarafından kontrol edilir.
+            }
+            System.out.println("[ERROR]: Invalid input! Please enter a numeric value.");
+            scanner.next();
+        }
     }
 }

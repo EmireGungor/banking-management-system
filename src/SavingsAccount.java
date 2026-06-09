@@ -64,7 +64,7 @@ public class SavingsAccount extends Account { //inheritance
         return isSuccess;
     }
 
-    public void applyMaturityInterest() {
+    private void applyMaturityInterest() {
         double currentBalance = getBalance();
         double interestAmount = currentBalance * this.interestRate;
 
